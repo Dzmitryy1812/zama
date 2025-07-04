@@ -1,3 +1,4 @@
+  GNU nano 6.2                                                contracts/FHECounter.sol                                                          
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
@@ -5,12 +6,12 @@ import { FHE, euint8, externalEuint8 } from "@fhevm/solidity/lib/FHE.sol";
 import { SepoliaConfig } from "@fhevm/solidity/config/ZamaConfig.sol";
 
 /// @title Confidential Voting with FHE
-contract ConfidentialVoting is SepoliaConfig {
+contract FHECounter is SepoliaConfig {
     euint8 private _votesSum;
     mapping(address => bool) public hasVoted;
 
     /// @notice Returns the current encrypted sum of votes
-    function getVotesSum() external view returns (euint8) {
+    function getCount() external view returns (euint8) {
         return _votesSum;
     }
 
@@ -26,4 +27,4 @@ contract ConfidentialVoting is SepoliaConfig {
         FHE.allowThis(_votesSum);
         FHE.allow(_votesSum, msg.sender);
     }
-} 
+}

@@ -1,30 +1,33 @@
-  GNU nano 6.2                                                contracts/FHECounter.sol                                                          
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+import { ethers } from "hardhat";
+import { expect } from "chai";
 
-import { FHE, euint8, externalEuint8 } from "@fhevm/solidity/lib/FHE.sol";
-import { SepoliaConfig } from "@fhevm/solidity/config/ZamaConfig.sol";
+describe("FHECounter", function () {
+  let counter: any;
+  let owner: any;
+  let alice: any;
 
-/// @title Confidential Voting with FHE
-contract FHECounter is SepoliaConfig {
-    euint8 private _votesSum;
-    mapping(address => bool) public hasVoted;
+  beforeEach(async function () {
+    [owner, alice] = await ethers.getSigners();
+    const Counter = await ethers.getContractFactory("FHECounter");
+    counter = await Counter.deploy();
+    await counter.waitForDeployment();
+  });
 
-    /// @notice Returns the current encrypted sum of votes
-    function getCount() external view returns (euint8) {
-        return _votesSum;
-    }
+  it("should deploy and return initial encrypted count", async function () {
+    const count = await counter.getCount();
+    expect(count).to.exist;
+    // Здесь count — зашифрованное значение, проверить его напрямую нельзя
+  });
 
-    /// @notice Submit an encrypted vote (0 or 1) with ZK proof
-    function vote(externalEuint8 inputEncryptedVote, bytes calldata inputProof) external {
-        require(!hasVoted[msg.sender], "Already voted");
+  // Пример теста инкремента (требует реального зашифрованного значения и proof)
+  it("should increment encrypted count", async function () {
+    // Здесь нужно получить зашифрованное значение и proof с помощью FHEVM SDK
+    // Пример (псевдокод):
+    // const { encrypted, proof } = await fhevm.encryptAndProve(1);
+    // await counter.increment(encrypted, proof);
 
-        euint8 encryptedVote = FHE.fromExternal(inputEncryptedVote, inputProof);
-        _votesSum = FHE.add(_votesSum, encryptedVote);
-        hasVoted[msg.sender] = true;
-
-        // Grant FHE decryption permissions for this contract and sender
-        FHE.allowThis(_votesSum);
-        FHE.allow(_votesSum, msg.sender);
-    }
-}
+    // Для мок-теста можно просто проверить, что функция вызывается без ошибок
+    // await counter.increment("0x00", "0x");
+    // expect(await counter.getCount()).to.exist;
+  });
+});

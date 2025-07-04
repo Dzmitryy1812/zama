@@ -1,39 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {FHE, euint32, externalEuint32} from "@fhevm/solidity/lib/FHE.sol";
-import {SepoliaConfig} from "@fhevm/solidity/config/ZamaConfig.sol";
+import { FHE, euint8, externalEuint8 } from "@fhevm/solidity/lib/FHE.sol";
+import { SepoliaConfig } from "@fhevm/solidity/config/ZamaConfig.sol";
 
-/// @title A simple FHE counter contract
-contract FHECounter is SepoliaConfig {
-    euint32 private _count;
+/// @title Confidential Voting with FHE
+contract ConfidentialVoting is SepoliaConfig {
+    euint8 private _votesSum;
+    mapping(address => bool) public hasVoted;
 
-    /// @notice Returns the current count
-    function getCount() external view returns (euint32) {
-        return _count;
+    /// @notice Returns the current encrypted sum of votes
+    function getVotesSum() external view returns (euint8) {
+        return _votesSum;
     }
 
-    /// @notice Increments the counter by a specified encrypted value.
-    /// @dev This example omits overflow/underflow checks for simplicity and readability.
-    /// In a production contract, proper range checks should be implemented.
-    function increment(externalEuint32 inputEuint32, bytes calldata inputProof) external {
-        euint32 encryptedEuint32 = FHE.fromExternal(inputEuint32, inputProof);
+    /// @notice Submit an encrypted vote (0 or 1) with ZK proof
+    function vote(externalEuint8 inputEncryptedVote, bytes calldata inputProof) external {
+        require(!hasVoted[msg.sender], "Already voted");
 
-        _count = FHE.add(_count, encryptedEuint32);
+        euint8 encryptedVote = FHE.fromExternal(inputEncryptedVote, inputProof);
+        _votesSum = FHE.add(_votesSum, encryptedVote);
+        hasVoted[msg.sender] = true;
 
-        FHE.allowThis(_count);
-        FHE.allow(_count, msg.sender);
+        // Grant FHE decryption permissions for this contract and sender
+        FHE.allowThis(_votesSum);
+        FHE.allow(_votesSum, msg.sender);
     }
-
-    /// @notice Decrements the counter by a specified encrypted value.
-    /// @dev This example omits overflow/underflow checks for simplicity and readability.
-    /// In a production contract, proper range checks should be implemented.
-    function decrement(externalEuint32 inputEuint32, bytes calldata inputProof) external {
-        euint32 encryptedEuint32 = FHE.fromExternal(inputEuint32, inputProof);
-
-        _count = FHE.sub(_count, encryptedEuint32);
-
-        FHE.allowThis(_count);
-        FHE.allow(_count, msg.sender);
-    }
-}
+} 
